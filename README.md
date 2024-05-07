@@ -12,12 +12,14 @@ join -> where -> selectの順でクエリを構築するといい感じです。
 ()とか使わずに、space区切りで粛々と`予約語 名`の文法を貫いてほしいです。
 
 文法
+
 `createtable`
 ```
 createtable {table名} {column数} ({column名},{column型(string or int)}) ({column名},{column型(string or int)}) ({column名},{column型(string or int)})...
 ```
 
 `upsert`
+
 渡したカラムとデータの順序は関係あります。
 ```
 upsert {table名} ({column名},{column名},{column名}...) ({データ},{データ},{データ}...)
