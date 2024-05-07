@@ -27,6 +27,15 @@ public class Table {
         throw new IllegalArgumentException("Column not found: " + columnName);
     }
 
+    public Class<?> getColumnType(String columnName) {
+        for (int i = 0; i < columns.size(); i++) {
+            if (columns.get(i).getName().equals(columnName)) {
+                return columns.get(i).getType();
+            }
+        }
+        throw new IllegalArgumentException("Column not found: " + columnName);
+    }
+
     public void addRow(Row row) {
         if (row.values.size() != columns.size()) {
             throw new IllegalArgumentException("Row does not match table columns.");
@@ -40,5 +49,9 @@ public class Table {
 
     public List<Column> getColumns() {
         return columns;
+    }
+
+    public int getColumnsSize() {
+        return columns.size();
     }
 }

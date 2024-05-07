@@ -1,6 +1,9 @@
 package jajujoDB;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Scanner;
 
 import jajujoDB.lib.Column;
 import jajujoDB.lib.Row;
@@ -9,51 +12,70 @@ public class JajujoDB {
     public static void main(String[] args) {
         DataBase db = new DataBase();
         Query query = new Query(db);
-
-        // テーブルの作成とデータの挿入
-        query.createTable("users",
-                          new Column("id", Integer.class),
-                          new Column("name", String.class),
-                          new Column("age", Integer.class));
-
-        query.createTable("orders",
-                          new Column("order_id", Integer.class),
-                          new Column("user_id", Integer.class),
-                          new Column("product", String.class));
-
-        Row user1 = new Row(3);
-        user1.setValue(0, 1);
-        user1.setValue(1, "Alice");
-        user1.setValue(2, 24);
-        query.upsert("users", user1);
-
-        Row user2 = new Row(3);
-        user2.setValue(0, 2);
-        user2.setValue(1, "Bob");
-        user2.setValue(2, 27);
-        query.upsert("users", user2);
-
-        Row order1 = new Row(3);
-        order1.setValue(0, 101);
-        order1.setValue(1, 1);
-        order1.setValue(2, "Laptop");
-        query.upsert("orders", order1);
-
-        Row order2 = new Row(3);
-        order2.setValue(0, 102);
-        order2.setValue(1, 2);
-        order2.setValue(2, "Smartphone");
-        query.upsert("orders", order2);
-
-        // Join users and orders where user age is 25 or older
-        List<Row> results = query.from("users")
-                                 .join("orders", "user_id", "users", "id")
-                                 .where(row -> (Integer) row.getValue(2) >= 25) // Assumes age is at index 2
-                                 .select("name", "product")
-                                 .execute();
-
-        for (Row result : results) {
-            System.out.println(result.getValue(0) + " ordered " + result.getValue(1));
+        Scanner scanner = new Scanner(System.in);
+        int tmp = 0;
+        while(tmp < 10){
+            String line = scanner.nextLine();
+            Queue<String> commands = new LinkedList<>();
+            for(String command :Parser.splitString(line))commands.offer(command);
+            while (!commands.isEmpty()) {
+                String command = commands.poll();
+                if(command.equals("createtable")){
+                    String tableName = commands.poll();
+                    int columnCount = Integer.parseInt(commands.poll());
+                    String[] columnNames = new String[columnCount];
+                    String[] columnTypes = new String[columnCount];
+                    for(int i =0;i<columnCount;i++){
+                        String[] columnInfo = Parser.bracketSplit(commands.poll());
+                        columnNames[i] = columnInfo[0];
+                        columnTypes[i] = columnInfo[1];
+                    }
+                    query.createTable(tableName, columnCount, columnNames, columnTypes);
+                }else if(command.equals("upsert")){
+                    String tableName = commands.poll();
+                    String[] columns = Parser.bracketSplit(commands.poll());
+                    String[] values = Parser.bracketSplit(commands.poll());
+                    query.upsert(tableName, columns,values);
+                }else{
+                    while (true) {
+                        Boolean breakFlag = false;
+                        switch (command) {
+                            case "from":
+                                String fromTableName = commands.poll();
+                                query = query.from(fromTableName);
+                                break;
+                            case "join":
+                                String joinTableName = commands.poll();
+                                String[] joinColumns = Parser.bracketSplit(commands.poll());
+                                query = query.join(joinTableName, joinColumns[0], joinColumns[1]);
+                                break;
+                            case "where":
+                                String[] params = Parser.bracketSplit(commands.poll());
+                                query = query.where(params[0], params[1], params[2]);
+                                break;
+                            case "select":
+                                String[] selectColumns = Parser.bracketSplit(commands.poll());
+                                query = query.select(selectColumns);
+                                breakFlag = true;
+                                break;
+                            default:
+                                breakFlag = true;
+                                break;
+                        }
+                        if (breakFlag) {
+                            List<Row> results = query.execute();
+                            for (Row result : results) {
+                                System.out.println(result.getValue(0) + " ordered " + result.getValue(1));
+                            }
+                            break;
+                        }
+                        command = commands.poll();
+                    }
+                }
+            }
+            tmp ++;
+            System.out.println(tmp);
         }
+        scanner.close();
     }
 }

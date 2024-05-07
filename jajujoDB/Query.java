@@ -23,13 +23,28 @@ public class Query {
         return this;
     }
 
-    public Query createTable(String tableName, Column... columns) {
+    public Query createTable(String tableName, int columnCount, String[] columnNames, String[] columnTypes) {
+        Column[] columns = new Column[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            columns[i] = new Column(columnNames[i], parseClass(columnTypes[i]));
+        }
         Table newTable = new Table(tableName);
         for (Column column : columns) {
             newTable.addColumn(column);
         }
         db.addTable(newTable);
         return this;
+    }
+
+    private Class<?> parseClass(String type) {
+        switch (type.toLowerCase()) {
+            case "int":
+                return Integer.class;
+            case "string":
+                return String.class;
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
+        }
     }
 
     public Query select(String... columnNames) {
@@ -51,9 +66,9 @@ public class Query {
         return this;
     }
 
-    public Query join(String tableName, String joinColumn, String onTable, String onColumn) {
+    public Query join(String tableName, String joinColumn, String onColumn) {
         Table joinTable = db.getTable(tableName);
-        Table onTableRef = db.getTable(onTable);
+        Table onTableRef = this.currentTable;
         int joinColumnIndex = joinTable.getColumnIndex(joinColumn);
         int onColumnIndex = onTableRef.getColumnIndex(onColumn);
         List<Row> newRows = new ArrayList<>();
@@ -74,7 +89,7 @@ public class Query {
             }
         }
         this.rows = newRows;
-        Table tempTable = new Table("temporary_table_for_join_"+tableName+"_"+onTable);
+        Table tempTable = new Table("temporary_table_for_join_"+tableName+"_"+onTableRef.name);
         for (Column column : onTableRef.getColumns()) {
             tempTable.addColumn(column);
         }
@@ -85,8 +100,17 @@ public class Query {
         return this;
     }
 
-    public Query upsert(String tableName, Row row) {
+    public Query upsert(String tableName, String[] columns, String[] values) {
         Table table = db.getTable(tableName);
+        Row row = new Row(table.getColumnsSize());
+        for(int i = 0;i<columns.length;i++){
+            int index = table.getColumnIndex(columns[i]);
+            if(table.getColumnType(columns[i]).equals(Integer.class)){
+                row.setValue(index, Integer.parseInt(values[i]));
+            } else {
+                row.setValue(index, values[i]);
+            }
+        }
         Object keyValue = row.getValue(0);
         boolean found = false;
         for (Row existingRow : table.getRows()) {
@@ -104,7 +128,32 @@ public class Query {
         return this;
     }
 
-    public Query where(Predicate<Row> condition) {
+    public Query where(String column, String operator, String value) {
+        Predicate<Row> condition = (row -> true);
+        int columnIndex = currentTable.getColumnIndex(column);
+        if(currentTable.getColumnType(column).equals(Integer.class)){
+            switch (operator) {
+                case "==":
+                    condition = (row -> (Integer) row.getValue(columnIndex) == Integer.parseInt(value));
+                    break;
+                case ">":
+                    condition = (row -> (Integer) row.getValue(columnIndex) > Integer.parseInt(value));
+                    break;
+                case "<":
+                    condition = (row -> (Integer) row.getValue(columnIndex) < Integer.parseInt(value));
+                    break;
+                case ">=":
+                    condition = (row -> (Integer) row.getValue(columnIndex) >= Integer.parseInt(value));
+                    break;
+                case "<=":
+                    condition = (row -> (Integer) row.getValue(columnIndex) <= Integer.parseInt(value));
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            condition = (row -> row.getValue(columnIndex).equals(value));
+        }
         this.rows = this.rows.stream().filter(condition).collect(Collectors.toList());
         return this;
     }
