@@ -13,6 +13,10 @@ public class Row {
         }
     }
 
+    public int getValueSize() {
+        return values.size();
+    }
+
     public void setValue(int index, Object value) {
         values.set(index, value);
     }
