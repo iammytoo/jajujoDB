@@ -32,3 +32,8 @@ join {結合するtable名} ({結合するcolumn名}, {結合されるcolumn名}
 where ({対象column名}, {演算子(==,>,<,>=,<=)}, {比較value})
 select ({対象column名},{対象column名},{対象column名}...)
 ```
+
+datetime型のフォーマット
+```
+yyyy/MM/dd HH:mm:ss
+```

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import jajujoDB.lib.*;
 
@@ -42,6 +44,8 @@ public class Query {
                 return Integer.class;
             case "string":
                 return String.class;
+            case "datetime":
+                return LocalDateTime.class;
             default:
                 throw new IllegalArgumentException("Unsupported type: " + type);
         }
@@ -107,6 +111,10 @@ public class Query {
             int index = table.getColumnIndex(columns[i]);
             if(table.getColumnType(columns[i]).equals(Integer.class)){
                 row.setValue(index, Integer.parseInt(values[i]));
+            } else if(table.getColumnType(columns[i]).equals(LocalDateTime.class)){
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+                LocalDateTime dateTime = LocalDateTime.parse(values[i], formatter);
+                row.setValue(index, dateTime);
             } else {
                 row.setValue(index, values[i]);
             }
@@ -147,6 +155,42 @@ public class Query {
                     break;
                 case "<=":
                     condition = (row -> (Integer) row.getValue(columnIndex) <= Integer.parseInt(value));
+                    break;
+                default:
+                    break;
+            }
+        } else if(currentTable.getColumnType(column).equals(LocalDateTime.class)){
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            switch (operator) {
+                case "==":
+                    condition = (row -> {
+                        LocalDateTime rowDateTime = (LocalDateTime) row.getValue(columnIndex);
+                        return rowDateTime.isEqual(LocalDateTime.parse(value,formatter));
+                });
+                    break;
+                case ">":
+                    condition = (row -> {
+                        LocalDateTime rowDateTime = (LocalDateTime) row.getValue(columnIndex);
+                        return rowDateTime.isAfter(LocalDateTime.parse(value,formatter));
+                });
+                    break;
+                case "<":
+                    condition = (row -> {
+                        LocalDateTime rowDateTime = (LocalDateTime) row.getValue(columnIndex);
+                        return rowDateTime.isBefore(LocalDateTime.parse(value,formatter));
+                });
+                    break;
+                case ">=":
+                    condition = (row -> {
+                        LocalDateTime rowDateTime = (LocalDateTime) row.getValue(columnIndex);
+                        return rowDateTime.isAfter(LocalDateTime.parse(value,formatter)) || rowDateTime.isEqual(LocalDateTime.parse(value,formatter));
+                    });
+                    break;
+                case "<=":
+                    condition = (row -> {
+                        LocalDateTime rowDateTime = (LocalDateTime) row.getValue(columnIndex);
+                        return rowDateTime.isBefore(LocalDateTime.parse(value,formatter)) || rowDateTime.isEqual(LocalDateTime.parse(value,formatter));
+                    });
                     break;
                 default:
                     break;

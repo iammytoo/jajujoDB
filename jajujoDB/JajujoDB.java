@@ -22,6 +22,7 @@ public class JajujoDB {
         int tmp = 0;
         try {
             while(true){
+            try{
                 Socket socket = s.accept();
                 
                 BufferedReader in = new BufferedReader(
@@ -60,7 +61,9 @@ public class JajujoDB {
                             switch (command) {
                                 case "from":
                                     String fromTableName = commands.poll();
+                                    System.out.println(fromTableName);
                                     query = query.from(fromTableName);
+                                    System.out.println(query);
                                     break;
                                 case "join":
                                     String joinTableName = commands.poll();
@@ -99,6 +102,10 @@ public class JajujoDB {
                 socket.close();
                 tmp ++;
                 System.out.println(tmp);
+            }catch(Exception e){
+                System.out.println(e);
+                continue;
+            }
             }
         }finally{
             scanner.close();

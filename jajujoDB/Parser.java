@@ -18,6 +18,7 @@ public class Parser {
     }
 
     public static String[] splitString(String input) {
+        input = input.trim();
         Matcher protectMatcher = PROTECT_PATTERN.matcher(input);
         
         ArrayList<String> protectedTexts = new ArrayList<>();
